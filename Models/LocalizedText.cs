@@ -6,9 +6,9 @@ namespace Translations.Models;
 
 public class LocalizedText
 {
-    public struct LocalizedTextFormData
+    public class FormData 
     {
-        public LanguageCodes? Language { get; set; }
+        public IFormFile[]? Files { get; set; }
         public string? GameFranchise { get; set; }
         public string? GameName { get; set; }
     }

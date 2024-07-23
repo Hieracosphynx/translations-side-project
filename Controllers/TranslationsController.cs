@@ -1,6 +1,5 @@
 using System.IO;
 using System.Text.RegularExpressions;
-using System.Collections.Generic;
 using Translations.Models;
 using Translations.Services;
 using Translations.Common.Enums;
@@ -47,15 +46,12 @@ public class TranslationsController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = newLocalizedText.Id }, newLocalizedText);
     }
 
-    [HttpPost("upload")]
-    public async Task<IActionResult> Upload([FromForm] IFormFile[] files)
-    {
-        if(files == null || files.Length == 0)
-        {
-            return BadRequest("No file uploaded");
-        }
 
-        Stack<LocalizedText> localizedTextStack = new Stack<LocalizedText>();
+    [HttpPost("upload")]
+    public async Task<IActionResult> Upload([FromForm] LocalizedText.FormData formData)
+    {
+        var files = formData.Files;
+        if(files == null || files.Length == 0) { return BadRequest("No file uploaded"); }
 
         for(var index = 0; index < files.Length; index++)
         {
@@ -76,34 +72,18 @@ public class TranslationsController : ControllerBase
                         Key = parsedTextEntry.Key, 
                         Text = parsedTextEntry.Value,
                         Language = (LanguageCodes) Enum.Parse(typeof(LanguageCodes), language, true),
-                        GameFranchise = "Game Family Name",
-                        GameName = "Variant Game Name"
+                        GameFranchise = formData.GameFranchise ?? "",
+                        GameName = formData.GameName ?? "" 
                     };
 
-                    Console.WriteLine("Localized Text Entry: {0}", localizedTextEntry);
-                    localizedTextStack.Push(localizedTextEntry);
-                    Console.WriteLine("Stack: {0}", localizedTextStack);
-
                     lineIndex++;
+
+                    await _translationsService.CreateAsync(localizedTextEntry);
                 }
             }
-
         }        
 
-        // TODO: Testing the waters
-        foreach(LocalizedText localizedText in localizedTextStack)
-        {
-            Console.WriteLine("Zankoku");
-            foreach(PropertyDescriptor descriptor in TypeDescriptor.GetProperties(localizedText))
-            {
-                string name = descriptor.Name;
-                object value = descriptor.GetValue(localizedText);
-
-                Console.WriteLine("{0}: {1}", name, value);
-            }
-        }
-
-        return Ok(new { message = "File Uploaded" });
+        return Ok(new { message = "Successfully uploaded" });
     }
 
 

@@ -26,10 +26,6 @@ public static class RegexTools
 
                 parsedTextEntry.Key = key;
                 parsedTextEntry.Value = value;
-
-                //Console.WriteLine("Text: {0}", text);
-                //Console.WriteLine("Key: {0}", key);
-                //Console.WriteLine("Text: {0}", value);
             }
             else
             {
