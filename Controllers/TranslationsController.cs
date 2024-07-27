@@ -9,6 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 
 // Debugging
 using System.ComponentModel;
+using Microsoft.AspNetCore.Mvc.ActionConstraints;
+using Microsoft.AspNetCore.Http.Extensions;
+using System.Web;
 
 namespace Translations.Controllers;
 
@@ -36,6 +39,19 @@ public class TranslationsController : ControllerBase
         }
 
         return localizedText;
+    }
+
+    [HttpGet("search")]
+    public async Task<ActionResult<LocalizedText>> Search()
+    {
+        var queries = HttpContext.Request.QueryString.Value;
+        string? text = HttpContext.Request.Query["text"];
+        string? name = HttpContext.Request.Query["name"];
+
+        Console.WriteLine(text);
+        Console.WriteLine(name);
+
+        return new LocalizedText();
     }
 
     [HttpPost]
