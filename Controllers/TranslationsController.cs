@@ -33,25 +33,22 @@ public class TranslationsController : ControllerBase
     {
         var localizedText = await _translationsService.GetAsync(id);
 
-        if(localizedText is null)
-        {
-            return NotFound();
-        }
+        if(localizedText is null) return NotFound();
 
         return localizedText;
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<LocalizedText>> Search()
+    public async Task<ActionResult<List<LocalizedText>>> Search()
     {
-        var queries = HttpContext.Request.QueryString.Value;
         string? text = HttpContext.Request.Query["text"];
-        string? name = HttpContext.Request.Query["name"];
+        string? gameName = HttpContext.Request.Query["gameName"];
 
-        Console.WriteLine(text);
-        Console.WriteLine(name);
+        List<LocalizedText>? localizedText = await _translationsService.GetAsync(text, gameName);
 
-        return new LocalizedText();
+        if(localizedText is null) return NotFound();
+
+        return localizedText;
     }
 
     [HttpPost]
@@ -124,6 +121,8 @@ public class TranslationsController : ControllerBase
     public async Task<IActionResult> Delete(string id)
     {
         var localizedText = await _translationsService.GetAsync(id);
+
+
 
         if(localizedText is null)
         {

@@ -2,5 +2,6 @@
   "Help.Disclaimer.A1": "例。 Google翻訳を使用しました",
   "Help.Disclaimer.A2": "例。 Google翻訳を使用しました1",
   "Help.Disclaimer.A3": "例。 Google翻訳を使用しました2",
-  "Feature.Example.Test.A1": "例。 Google翻訳を使用しました3"
+  "Feature.Example.Test.A1": "例。 Google翻訳を使用しました3",
+  "Feature.Example.Test.Complex": "例。 翻訳を使用しました3{complexSomething}"
 }

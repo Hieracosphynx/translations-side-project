@@ -2,5 +2,6 @@
   "Help.Disclaimer.A1": "Пример. Използван гугъл преводач",
   "Help.Disclaimer.A2": "Пример. Използван гугъл преводач1",
   "Help.Disclaimer.A3": "Пример. Използван гугъл преводач2",
-  "Feature.Example.Test.A1": "Пример. Използван гугъл преводач3"
+  "Feature.Example.Test.A1": "Пример. Използван гугъл преводач3",
+  "Feature.Example.Test.Complex": "{complex}. Използван гугъл преводач3"
 }

@@ -35,4 +35,11 @@ public static class RegexTools
 
         return parsedTextEntry;
     }
+
+    public static string PreProcessString(string? input)
+    {
+        if(input == null || input == "") { return ""; }
+
+        return Regex.Replace(input, @"\{[^}]*\}", string.Empty).Trim();
+    }
 }
