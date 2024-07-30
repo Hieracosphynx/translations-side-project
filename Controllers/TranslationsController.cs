@@ -42,9 +42,13 @@ public class TranslationsController : ControllerBase
     public async Task<ActionResult<List<LocalizedText>>> Search()
     {
         string? text = HttpContext.Request.Query["text"];
+        string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
 
-        List<LocalizedText>? localizedText = await _translationsService.GetAsync(text, gameName);
+        // Cannot allow to return all data in the collection.
+        if(string.IsNullOrEmpty(text) && string.IsNullOrEmpty(gameName) && string.IsNullOrEmpty(gameFranchise)) { return NotFound(); }
+
+        List<LocalizedText>? localizedText = await _translationsService.GetAsync(text, gameFranchise, gameName);
 
         if(localizedText is null) return NotFound();
 
@@ -121,8 +125,6 @@ public class TranslationsController : ControllerBase
     public async Task<IActionResult> Delete(string id)
     {
         var localizedText = await _translationsService.GetAsync(id);
-
-
 
         if(localizedText is null)
         {

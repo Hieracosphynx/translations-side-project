@@ -2,6 +2,7 @@ using Translations.Models;
 using Translations.Common.Utilities;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using System.Text.RegularExpressions;
 
 namespace Translations.Services;
 
@@ -27,13 +28,19 @@ public class TranslationsService
     public async Task<LocalizedText?> GetAsync(string id) =>
         await _translationsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    public async Task<List<LocalizedText>> GetAsync(string? text, string? gameName)
+    public async Task<List<LocalizedText>> GetAsync(string? text, string? gameFranchise, string? gameName)
     {
-        // TODO: Optimize.
+        var isTextEmpty = string.IsNullOrEmpty(text);
+        var isGameFranchiseEmpty = string.IsNullOrEmpty(gameFranchise);
+        var isGameNameEmpty = string.IsNullOrEmpty(gameName);
+
+        var localizedTexts = await _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToListAsync();
         var preProcessedString = RegexTools.PreProcessString(text);
-        var localizedTexts = _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToList();
-        var matchingLocTexts = localizedTexts.Where(doc => RegexTools.PreProcessString(doc.Text) == preProcessedString).ToList();
-        
+        var matchingLocTexts = localizedTexts.Where(doc => 
+            (isTextEmpty || RegexTools.PreProcessString(doc.Text) == preProcessedString) &&
+            (isGameFranchiseEmpty || doc.GameFranchise == gameFranchise) &&
+            (isGameNameEmpty || doc.GameName == gameName)).ToList();
+
         return matchingLocTexts;
     }
 
