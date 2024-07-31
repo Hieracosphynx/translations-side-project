@@ -1,8 +1,8 @@
 using Translations.Models;
 using Translations.Common.Utilities;
+using Translations.Common.Constants;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
-using System.Text.RegularExpressions;
 
 namespace Translations.Services;
 
@@ -42,6 +42,36 @@ public class TranslationsService
             (isGameNameEmpty || doc.GameName == gameName)).ToList();
 
         return matchingLocTexts;
+    }
+
+    /**
+    * Handles matching text from the file.
+    **/
+    public async Task<List<LocalizedText>> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise)
+    {
+        List<LocalizedText> localizedTexts = [];    
+
+        var localizedTextCollection = await _translationsCollection.Find(_ => true).ToListAsync();
+        using(var reader = new StreamReader(file.OpenReadStream()))
+        {
+            while(!reader.EndOfStream)
+            {
+                var text = await reader.ReadLineAsync();
+
+                if(text == null || text == "{" || text == "}") { continue; }
+                
+                var parsedTextEntry = RegexTools.GetParsedTextEntry(text, RegexPatterns.KeyAndTextPattern);
+                var localizedText = localizedTextCollection.Where(doc =>
+                    RegexTools.PreProcessString(doc.Text) == RegexTools.PreProcessString(parsedTextEntry.Value)) 
+                    .FirstOrDefault();
+
+                if(localizedText == null) { continue; }
+
+                localizedTexts.Add(localizedText);
+            }
+        }
+
+        return localizedTexts;
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>

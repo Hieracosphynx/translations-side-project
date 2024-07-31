@@ -15,8 +15,6 @@ public static class RegexTools
     {
         ParsedTextEntry parsedTextEntry= new ParsedTextEntry();
 
-        Console.WriteLine(nameof(GetParsedTextEntry));
-
         foreach(Match match in Regex.Matches(text, pattern))
         {
             if(match.Success)

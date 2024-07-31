@@ -55,6 +55,20 @@ public class TranslationsController : ControllerBase
         return localizedText;
     }
 
+    /**
+    * Skims through the file.
+    */
+    [HttpPost("search")]
+    public async Task<ActionResult<List<LocalizedText>>> Search([FromForm] IFormFile? file)
+    {
+        if(file == null || file.Length == 0) { return NotFound(); }
+
+        string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
+        string? gameName = HttpContext.Request.Query["gameName"];
+
+        return await _translationsService.ProcessFileAsync(file, gameName, gameFranchise);
+    }
+
     [HttpPost]
     public async Task<IActionResult> Post([FromForm] LocalizedText newLocalizedText)
     {
