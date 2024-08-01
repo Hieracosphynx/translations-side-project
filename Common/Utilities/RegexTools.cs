@@ -1,9 +1,9 @@
-using System;
 using System.Text.RegularExpressions;
+using Translations.Common.Constants;
 
 namespace Translations.Common.Utilities;
 
-public static class RegexTools 
+public static partial class RegexTools 
 {
     public struct ParsedTextEntry
     {
@@ -11,11 +11,17 @@ public static class RegexTools
         public string Value { get; set; }
     }
 
-    public static ParsedTextEntry GetParsedTextEntry(string text, string pattern)
+    /// <summary>
+    /// Separates "The.Key": "From the description."
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="pattern"></param>
+    /// <returns>ParsedTextEntry { Key, Value }</returns>
+    public static ParsedTextEntry ParseTextEntry(string text)
     {
-        ParsedTextEntry parsedTextEntry= new ParsedTextEntry();
+        ParsedTextEntry parsedTextEntry = new();
 
-        foreach(Match match in Regex.Matches(text, pattern))
+        foreach(Match match in ParseTextEntryRegex().Matches(text))
         {
             if(match.Success)
             {
@@ -34,10 +40,33 @@ public static class RegexTools
         return parsedTextEntry;
     }
 
-    public static string PreProcessString(string? input)
+    /// <summary>
+    /// General replacing whatever pattern is given and remove white spaces.
+    /// </summary>
+    /// <param name="input">string to be parsed</param>
+    /// <param name="pattern">Regex pattern to follow</param>
+    /// <returns></returns>
+    public static string PreProcessString(string? input, string pattern)
     {
         if(input == null || input == "") { return ""; }
 
-        return Regex.Replace(input, @"\{[^}]*\}", string.Empty).Trim();
+        return string.Join("", Regex.Replace(input, pattern, string.Empty).Split(' '));
     }
+
+    public static bool IsMatch(string? s1, string? s2, string[] patterns)
+    {
+        var preProcessedS1 = "";
+        var preProcessedS2 = "";
+
+        foreach(var pattern in patterns)
+        {
+            preProcessedS1 = PreProcessString(s1, pattern);
+            preProcessedS2 = PreProcessString(s2, pattern);    
+        }
+
+        return preProcessedS1.Equals(preProcessedS2, StringComparison.CurrentCultureIgnoreCase);
+    }
+
+    [GeneratedRegex(RegexPatterns.KeyAndTextPattern)]
+    private static partial Regex ParseTextEntryRegex();
 }

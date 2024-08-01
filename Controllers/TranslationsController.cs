@@ -77,10 +77,10 @@ public class TranslationsController : ControllerBase
         return CreatedAtAction(nameof(Get), new { id = newLocalizedText.Id }, newLocalizedText);
     }
 
-
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] LocalizedText.FormData formData)
     {
+        // TODO: Move to services
         var files = formData.Files;
         if(files == null || files.Length == 0) { return BadRequest("No file uploaded"); }
 
@@ -97,7 +97,7 @@ public class TranslationsController : ControllerBase
                     if(text == "{" || text == "}" || text == null || text == ""){ continue; }
 
                     var language = Path.GetFileNameWithoutExtension(file.FileName);
-                    var parsedTextEntry = RegexTools.GetParsedTextEntry(text, RegexPatterns.KeyAndTextPattern);
+                    var parsedTextEntry = RegexTools.ParseTextEntry(text);
                     var localizedTextEntry = new LocalizedText() 
                     { 
                         Key = parsedTextEntry.Key, 

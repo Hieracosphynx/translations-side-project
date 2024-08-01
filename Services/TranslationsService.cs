@@ -35,9 +35,9 @@ public class TranslationsService
         var isGameNameEmpty = string.IsNullOrEmpty(gameName);
 
         var localizedTexts = await _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToListAsync();
-        var preProcessedString = RegexTools.PreProcessString(text);
+        var preProcessedString = RegexTools.PreProcessString(text, RegexPatterns.ComplexStringPattern);
         var matchingLocTexts = localizedTexts.Where(doc => 
-            (isTextEmpty || RegexTools.PreProcessString(doc.Text) == preProcessedString) &&
+            (isTextEmpty || RegexTools.PreProcessString(doc.Text, RegexPatterns.ComplexStringPattern) == preProcessedString) &&
             (isGameFranchiseEmpty || doc.GameFranchise == gameFranchise) &&
             (isGameNameEmpty || doc.GameName == gameName)).ToList();
 
@@ -49,7 +49,9 @@ public class TranslationsService
     **/
     public async Task<List<LocalizedText>> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise)
     {
-        List<LocalizedText> localizedTexts = [];    
+        List<LocalizedText> localizedTexts = [];
+        var preProcessString = RegexTools.PreProcessString; 
+        var isMatch = RegexTools.IsMatch;
 
         var localizedTextCollection = await _translationsCollection.Find(_ => true).ToListAsync();
         using(var reader = new StreamReader(file.OpenReadStream()))
@@ -60,9 +62,14 @@ public class TranslationsService
 
                 if(text == null || text == "{" || text == "}") { continue; }
                 
-                var parsedTextEntry = RegexTools.GetParsedTextEntry(text, RegexPatterns.KeyAndTextPattern);
+                var parsedTextEntry = RegexTools.ParseTextEntry(text);
+
                 var localizedText = localizedTextCollection.Where(doc =>
-                    RegexTools.PreProcessString(doc.Text) == RegexTools.PreProcessString(parsedTextEntry.Value)) 
+                    isMatch(doc.Text, parsedTextEntry.Value, [RegexPatterns.ComplexStringPattern, RegexPatterns.SpecialCharactersPattern]) &&
+                    (string.IsNullOrEmpty(gameFranchise) || 
+                        isMatch(doc.GameFranchise, gameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
+                    (string.IsNullOrEmpty(gameName) || 
+                        isMatch(doc.GameName, gameName, [RegexPatterns.SpecialCharactersPattern])))
                     .FirstOrDefault();
 
                 if(localizedText == null) { continue; }
