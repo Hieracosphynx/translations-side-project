@@ -13,7 +13,12 @@ public static class RegexPatterns
     public const string ComplexStringPattern = @"\{[^}]*\}";
 
     /// <summary>
-    /// Regex pattern that removes special characters in texts",
+    /// Regex pattern that removes special characters in texts.
     /// </summary>
     public const string SpecialCharactersPattern = @"[!@#$%^&*(),.?""{}|<>]";
+
+    /// <summary>
+    /// Regex pattern that removes special characters except {}
+    /// </summary>
+    public const string SpecialCharExceptBraces = @"[!@#$%^&*(),.?""|<>]";
 }

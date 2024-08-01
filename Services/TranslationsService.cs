@@ -28,20 +28,13 @@ public class TranslationsService
     public async Task<LocalizedText?> GetAsync(string id) =>
         await _translationsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    public async Task<List<LocalizedText>> GetAsync(string? text, string? gameFranchise, string? gameName)
+    public async Task<IEnumerable<LocalizedText>> GetAsync(string? text, string? gameFranchise, string? gameName)
     {
-        var isTextEmpty = string.IsNullOrEmpty(text);
-        var isGameFranchiseEmpty = string.IsNullOrEmpty(gameFranchise);
-        var isGameNameEmpty = string.IsNullOrEmpty(gameName);
+        URLParameters urlParams = new(text, gameFranchise, gameName);
 
         var localizedTexts = await _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToListAsync();
-        var preProcessedString = RegexTools.PreProcessString(text, RegexPatterns.ComplexStringPattern);
-        var matchingLocTexts = localizedTexts.Where(doc => 
-            (isTextEmpty || RegexTools.PreProcessString(doc.Text, RegexPatterns.ComplexStringPattern) == preProcessedString) &&
-            (isGameFranchiseEmpty || doc.GameFranchise == gameFranchise) &&
-            (isGameNameEmpty || doc.GameName == gameName)).ToList();
 
-        return matchingLocTexts;
+        return MatchLocalizedTextEntries(localizedTexts, urlParams);
     }
 
     /**
@@ -63,14 +56,9 @@ public class TranslationsService
                 if(text == null || text == "{" || text == "}") { continue; }
                 
                 var parsedTextEntry = RegexTools.ParseTextEntry(text);
+                URLParameters urlParams = new(parsedTextEntry.Value, gameFranchise, gameName);
 
-                var localizedText = localizedTextCollection.Where(doc =>
-                    isMatch(doc.Text, parsedTextEntry.Value, [RegexPatterns.ComplexStringPattern, RegexPatterns.SpecialCharactersPattern]) &&
-                    (string.IsNullOrEmpty(gameFranchise) || 
-                        isMatch(doc.GameFranchise, gameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
-                    (string.IsNullOrEmpty(gameName) || 
-                        isMatch(doc.GameName, gameName, [RegexPatterns.SpecialCharactersPattern])))
-                    .FirstOrDefault();
+                var localizedText = MatchLocalizedTextEntries(localizedTextCollection, urlParams).FirstOrDefault();
 
                 if(localizedText == null) { continue; }
 
@@ -89,4 +77,26 @@ public class TranslationsService
 
     public async Task RemoveAsync(string id) =>
         await _translationsCollection.DeleteOneAsync(x => x.Id == id);
+
+    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(List<LocalizedText> localizedTextEntries, URLParameters urlParams)
+    {
+        var isMatch = RegexTools.IsMatch;
+
+        var localizedText = localizedTextEntries.Where(doc =>
+            isMatch(doc.Text, urlParams.Text, [RegexPatterns.SpecialCharExceptBraces,RegexPatterns.ComplexStringPattern]) &&
+            (string.IsNullOrEmpty(urlParams.GameFranchise) || 
+                isMatch(doc.GameFranchise, urlParams.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
+            (string.IsNullOrEmpty(urlParams.GameName) || 
+                isMatch(doc.GameName, urlParams.GameName, [RegexPatterns.SpecialCharactersPattern])));
+
+        return localizedText;
+    }
+
+    // TODO: Not sure if this is the best way but I'll go with it.
+    private struct URLParameters(string? text, string? gameFranchise, string? gameName)
+    {
+        public string? Text { get; set; } = text;
+        public string? GameName { get; set; } = gameName;
+        public string? GameFranchise { get; set; } = gameFranchise;
+    }
 }

@@ -39,7 +39,7 @@ public class TranslationsController : ControllerBase
     }
 
     [HttpGet("search")]
-    public async Task<ActionResult<List<LocalizedText>>> Search()
+    public async Task<ActionResult<IEnumerable<LocalizedText>>> Search()
     {
         string? text = HttpContext.Request.Query["text"];
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
@@ -48,11 +48,11 @@ public class TranslationsController : ControllerBase
         // Cannot allow to return all data in the collection.
         if(string.IsNullOrEmpty(text) && string.IsNullOrEmpty(gameName) && string.IsNullOrEmpty(gameFranchise)) { return NotFound(); }
 
-        List<LocalizedText>? localizedText = await _translationsService.GetAsync(text, gameFranchise, gameName);
+        IEnumerable<LocalizedText>? localizedTextEntries = await _translationsService.GetAsync(text, gameFranchise, gameName);
 
-        if(localizedText is null) return NotFound();
+        if(localizedTextEntries is null) return NotFound();
 
-        return localizedText;
+        return Ok(localizedTextEntries);
     }
 
     /**
