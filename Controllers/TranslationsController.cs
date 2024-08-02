@@ -45,9 +45,6 @@ public class TranslationsController : ControllerBase
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
 
-        // Cannot allow to return all data in the collection.
-        if(string.IsNullOrEmpty(text) && string.IsNullOrEmpty(gameName) && string.IsNullOrEmpty(gameFranchise)) { return NotFound(); }
-
         IEnumerable<LocalizedText>? localizedTextEntries = await _translationsService.GetAsync(text, gameFranchise, gameName);
 
         if(localizedTextEntries is null) return NotFound();
@@ -59,14 +56,21 @@ public class TranslationsController : ControllerBase
     * Skims through the file.
     */
     [HttpPost("search")]
-    public async Task<ActionResult<List<LocalizedText>>> Search([FromForm] IFormFile? file)
+    public async Task<ActionResult<LocalizedText.Results>> Search([FromForm] IFormFile? file)
     {
         if(file == null || file.Length == 0) { return NotFound(); }
 
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
 
-        return await _translationsService.ProcessFileAsync(file, gameName, gameFranchise);
+        var results = await _translationsService.ProcessFileAsync(file, gameName, gameFranchise); 
+        
+        if(results.FoundTextEntries != null) 
+        {
+            await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries);
+        }
+
+        return results;
     }
 
     [HttpPost]
@@ -96,13 +100,13 @@ public class TranslationsController : ControllerBase
 
                     if(text == "{" || text == "}" || text == null || text == ""){ continue; }
 
-                    var language = Path.GetFileNameWithoutExtension(file.FileName);
+                    var fileName = Path.GetFileNameWithoutExtension(file.FileName);
                     var parsedTextEntry = RegexTools.ParseTextEntry(text);
                     var localizedTextEntry = new LocalizedText() 
                     { 
                         Key = parsedTextEntry.Key, 
                         Text = parsedTextEntry.Value,
-                        Language = (LanguageCodes) Enum.Parse(typeof(LanguageCodes), language, true),
+                        Language = Language.GetLanguageCodeEnum(fileName),
                         GameFranchise = formData.GameFranchise ?? "",
                         GameName = formData.GameName ?? "" 
                     };

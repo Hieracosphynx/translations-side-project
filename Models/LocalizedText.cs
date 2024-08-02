@@ -6,11 +6,23 @@ namespace Translations.Models;
 
 public class LocalizedText
 {
-    public class FormData 
+    public struct ParsedTextEntry
+    {
+        public string? Key { get; set; }
+        public string? Value { get; set; }
+    }
+
+    public struct FormData 
     {
         public IFormFile[]? Files { get; set; }
         public string? GameFranchise { get; set; }
         public string? GameName { get; set; }
+    }
+
+    public struct Results(List<LocalizedText> found, List<LocalizedText> notFound)
+    {
+        public List<LocalizedText>? FoundTextEntries { get; set; } = found;
+        public List<LocalizedText>? NotFoundTextEntries { get; set; } = notFound;
     }
 
     [BsonId]
@@ -19,7 +31,7 @@ public class LocalizedText
     [BsonElement("Name")]
     public string Key { get; set; } = "This.A.Key"; 
     public string? Text { get; set; }
-    public LanguageCodes? Language { get; set; }
+    public Language.Codes? Language { get; set; }
     public string? GameFranchise { get; set; }
     public string? GameName { get; set; }
 }

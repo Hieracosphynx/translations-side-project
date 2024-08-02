@@ -1,8 +1,11 @@
-using Translations.Models;
-using Translations.Common.Utilities;
-using Translations.Common.Constants;
+using System.IO;
+using System.Text.Json;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
+using Translations.Models;
+using Translations.Common.Enums;
+using Translations.Common.Utilities;
+using Translations.Common.Constants;
 
 namespace Translations.Services;
 
@@ -40,9 +43,10 @@ public class TranslationsService
     /**
     * Handles matching text from the file.
     **/
-    public async Task<List<LocalizedText>> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise)
+    public async Task<LocalizedText.Results> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise)
     {
-        List<LocalizedText> localizedTexts = [];
+        List<LocalizedText> foundLocalizedTexts = [];
+        List<LocalizedText> notFoundLocalizedTexts = [];
         var preProcessString = RegexTools.PreProcessString; 
         var isMatch = RegexTools.IsMatch;
 
@@ -60,13 +64,45 @@ public class TranslationsService
 
                 var localizedText = MatchLocalizedTextEntries(localizedTextCollection, urlParams).FirstOrDefault();
 
-                if(localizedText == null) { continue; }
+                if(localizedText == null) 
+                { 
+                    var fileName = Path.GetFileNameWithoutExtension(file.FileName);
+                    LocalizedText localizedTextEntry = new(){
+                        Key = parsedTextEntry.Key,
+                        Text = parsedTextEntry.Value,
+                        Language = Language.GetLanguageCodeEnum(fileName),
+                        GameName = gameName,
+                        GameFranchise = gameFranchise
+                    };
+                    
+                    notFoundLocalizedTexts.Add(localizedTextEntry);
 
-                localizedTexts.Add(localizedText);
+                    continue; 
+                }
+
+                foundLocalizedTexts.Add(localizedText);
             }
         }
 
-        return localizedTexts;
+        return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
+    }
+
+    public async Task GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTexts)
+    {
+        // TODO: Missing characters -> characters got substituted with \uxxx.
+        var locTextDictionary = new Dictionary<string, string>();
+
+        foreach(var localizedText in localizedTexts)
+        {
+            if(localizedText.Text == null) { continue; }
+
+            locTextDictionary.Add(localizedText.Key, localizedText.Text);
+
+        }
+
+        string jsonString = JsonSerializer.Serialize(locTextDictionary);
+        Console.WriteLine(jsonString);
+        File.WriteAllText(@"C:\Users\corte\Downloads\temp.json", jsonString);
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>
@@ -82,14 +118,12 @@ public class TranslationsService
     {
         var isMatch = RegexTools.IsMatch;
 
-        var localizedText = localizedTextEntries.Where(doc =>
+        return localizedTextEntries.Where(doc =>
             isMatch(doc.Text, urlParams.Text, [RegexPatterns.SpecialCharExceptBraces,RegexPatterns.ComplexStringPattern]) &&
             (string.IsNullOrEmpty(urlParams.GameFranchise) || 
                 isMatch(doc.GameFranchise, urlParams.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
             (string.IsNullOrEmpty(urlParams.GameName) || 
                 isMatch(doc.GameName, urlParams.GameName, [RegexPatterns.SpecialCharactersPattern])));
-
-        return localizedText;
     }
 
     // TODO: Not sure if this is the best way but I'll go with it.

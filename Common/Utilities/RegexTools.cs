@@ -1,15 +1,11 @@
 using System.Text.RegularExpressions;
 using Translations.Common.Constants;
+using Translations.Models;
 
 namespace Translations.Common.Utilities;
 
 public static partial class RegexTools 
 {
-    public struct ParsedTextEntry
-    {
-        public string Key { get; set; }
-        public string Value { get; set; }
-    }
 
     /// <summary>
     /// Separates "The.Key": "From the description."
@@ -17,9 +13,9 @@ public static partial class RegexTools
     /// <param name="text"></param>
     /// <param name="pattern"></param>
     /// <returns>ParsedTextEntry { Key, Value }</returns>
-    public static ParsedTextEntry ParseTextEntry(string text)
+    public static LocalizedText.ParsedTextEntry ParseTextEntry(string text)
     {
-        ParsedTextEntry parsedTextEntry = new();
+        LocalizedText.ParsedTextEntry parsedTextEntry = new();
 
         foreach(Match match in ParseTextEntryRegex().Matches(text))
         {
