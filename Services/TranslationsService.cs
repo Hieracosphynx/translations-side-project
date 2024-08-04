@@ -12,6 +12,7 @@ namespace Translations.Services;
 
 public class TranslationsService
 {
+    //private IEnumerable<LocalizedText> foundResults; TODO: Still pondering if we need this.
     private readonly IMongoCollection<LocalizedText> _translationsCollection;
 
     public TranslationsService(IOptions<TranslationsDatabaseSettings> translationsDbSettings)
@@ -44,14 +45,11 @@ public class TranslationsService
     /**
     * Handles matching text from the file.
     **/
-    public async Task<LocalizedText.Results> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise)
+    public async Task<LocalizedText.Results> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise, IEnumerable<LocalizedText> localizedTextCollection)
     {
         List<LocalizedText> foundLocalizedTexts = [];
         List<LocalizedText> notFoundLocalizedTexts = [];
-        var preProcessString = RegexTools.PreProcessString; 
-        var isMatch = RegexTools.IsMatch;
 
-        var localizedTextCollection = await _translationsCollection.Find(_ => true).ToListAsync();
         using(var reader = new StreamReader(file.OpenReadStream()))
         {
             while(!reader.EndOfStream)
@@ -88,25 +86,55 @@ public class TranslationsService
         return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
-    public async Task GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTexts)
+    public async Task GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
-        // TODO: Missing characters -> characters got substituted with \uxxx.
-        var locTextDictionary = new Dictionary<string, string>();
+        // Get all texts FOR EACH languages.
+        var languages = Enum.GetValues(typeof(Language.Codes)).Cast<Language.Codes>();
+        Language.Codes[] skipLanguages = [
+            Language.Codes.Unknown, 
+            Language.Codes.en_GB, 
+            Language.Codes.en_US];
 
-        foreach(var localizedText in localizedTexts)
+        foreach(var language in languages)
         {
-            if(localizedText.Text == null) { continue; }
+            if(skipLanguages.Contains(language)) { continue; }
 
-            locTextDictionary.Add(localizedText.Key, localizedText.Text);
+            var filename = language.ToString()+".json";
+            Console.WriteLine(filename);
+            var locTextDictionary = new Dictionary<string, string?>();
+
+            foreach(var localizedTextResult in localizedTextResults)
+            {
+                if(localizedTextResult.Text == null) { continue; }
+
+                // TODO
+                var localizedTextEntry = MatchLocalizedTextEntries(
+                    localizedTextCollection, new URLParameters(){
+                        Text = localizedTextResult.Text,
+                        GameFranchise = localizedTextResult.GameFranchise,
+                        GameName = localizedTextResult.GameName
+                    }).Where(doc => doc.Language == language).FirstOrDefault(); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
+
+                if(localizedTextEntry == null) 
+                { 
+                    Console.WriteLine("Nothing found");
+                    continue; 
+                }
+
+                Console.WriteLine(localizedTextEntry.Text);
+
+                locTextDictionary.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+            }
+
+            string jsonString = RegexTools.ParseUnicodeString(
+                JsonSerializer.Serialize(locTextDictionary));
+            string formattedJsonString = JToken.Parse(jsonString)
+                .ToString(Newtonsoft.Json.Formatting.Indented);
+
+            // TODO: Only use for development. This will get removed.
+            var path = @"C:\Users\corte\Downloads\" + filename;
+            await File.WriteAllTextAsync(path, formattedJsonString);
         }
-
-        string jsonString = RegexTools.ParseUnicodeString(JsonSerializer.Serialize(locTextDictionary));
-        string formattedJsonString = JToken.Parse(jsonString).ToString(Newtonsoft.Json.Formatting.Indented);
-
-        // TODO: Only use for development. This will get removed.
-        var path = @"C:\Users\corte\Downloads\temp.json";
-        //var path = @"/Users/hieracosphynx/Downloads/temp.json";
-        await File.WriteAllTextAsync(path, formattedJsonString);
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>
@@ -118,7 +146,7 @@ public class TranslationsService
     public async Task RemoveAsync(string id) =>
         await _translationsCollection.DeleteOneAsync(x => x.Id == id);
 
-    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(List<LocalizedText> localizedTextEntries, URLParameters urlParams)
+    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(IEnumerable<LocalizedText> localizedTextEntries, URLParameters urlParams)
     {
         var isMatch = RegexTools.IsMatch;
 

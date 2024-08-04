@@ -60,12 +60,13 @@ public class TranslationsController : ControllerBase
     {
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
+        IEnumerable<LocalizedText> localizedTextCollection = await _translationsService.GetAsync();
 
-        var results = await _translationsService.ProcessFileAsync(file, gameName, gameFranchise); 
+        var results = await _translationsService.ProcessFileAsync(file, gameName, gameFranchise, localizedTextCollection); 
         
         if(results.FoundTextEntries != null) 
         {
-            await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries);
+            await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
         }
 
         return results;
