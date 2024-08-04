@@ -108,12 +108,7 @@ public class TranslationsService
                 if(localizedTextResult.Text == null) { continue; }
 
                 // TODO
-                var localizedTextEntry = MatchLocalizedTextEntries(
-                    localizedTextCollection, new URLParameters(){
-                        Text = localizedTextResult.Text,
-                        GameFranchise = localizedTextResult.GameFranchise,
-                        GameName = localizedTextResult.GameName
-                    }).Where(doc => doc.Language == language).FirstOrDefault(); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
+                var localizedTextEntry = GetLanguageTextEntry(localizedTextCollection, localizedTextResult.Key, language); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
 
                 if(localizedTextEntry == null) 
                 { 
@@ -121,19 +116,19 @@ public class TranslationsService
                     continue; 
                 }
 
-                Console.WriteLine(localizedTextEntry.Text);
+                Console.WriteLine("{0} => {1}: {2}", filename, localizedTextEntry.Key, localizedTextEntry.Text);
 
                 locTextDictionary.Add(localizedTextEntry.Key, localizedTextEntry.Text);
             }
 
-            string jsonString = RegexTools.ParseUnicodeString(
-                JsonSerializer.Serialize(locTextDictionary));
-            string formattedJsonString = JToken.Parse(jsonString)
-                .ToString(Newtonsoft.Json.Formatting.Indented);
+            //string jsonString = RegexTools.ParseUnicodeString(
+                //JsonSerializer.Serialize(locTextDictionary));
+            //string formattedJsonString = JToken.Parse(jsonString)
+                //.ToString(Newtonsoft.Json.Formatting.Indented);
 
-            // TODO: Only use for development. This will get removed.
-            var path = @"C:\Users\corte\Downloads\" + filename;
-            await File.WriteAllTextAsync(path, formattedJsonString);
+            //// TODO: Only use for development. This will get removed.
+            //var path = @"C:\Users\corte\Downloads\" + filename;
+            //await File.WriteAllTextAsync(path, formattedJsonString);
         }
     }
 
@@ -156,6 +151,13 @@ public class TranslationsService
                 isMatch(doc.GameFranchise, urlParams.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
             (string.IsNullOrEmpty(urlParams.GameName) || 
                 isMatch(doc.GameName, urlParams.GameName, [RegexPatterns.SpecialCharactersPattern])));
+    }
+
+    private static LocalizedText? GetLanguageTextEntry(IEnumerable<LocalizedText> localizedTextEntries, string Key, Language.Codes language)
+    {
+        var isMatch = RegexTools.IsMatch;
+
+        return localizedTextEntries.Where(doc => doc.Key == Key && doc.Language == language).FirstOrDefault();
     }
 
     // TODO: Not sure if this is the best way but I'll go with it.

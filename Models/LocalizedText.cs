@@ -6,20 +6,20 @@ namespace Translations.Models;
 
 public class LocalizedText
 {
-    public struct ParsedTextEntry
+    public class ParsedTextEntry
     {
-        public string Key { get; set; }
-        public string Value { get; set; }
+        public string Key { get; set; } = "";
+        public string Value { get; set; } = "";
     }
 
-    public struct FormData 
+    public class FormData
     {
-        public IFormFile[]? Files { get; set; }
+        public IFormFile[] Files { get; set; } = [];
         public string? GameFranchise { get; set; }
         public string? GameName { get; set; }
     }
 
-    public struct Results(List<LocalizedText> found, List<LocalizedText> notFound)
+    public class Results(List<LocalizedText> found, List<LocalizedText> notFound)
     {
         public List<LocalizedText>? FoundTextEntries { get; set; } = found;
         public List<LocalizedText>? NotFoundTextEntries { get; set; } = notFound;
