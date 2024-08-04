@@ -21,4 +21,9 @@ public static class RegexPatterns
     /// Regex pattern that removes special characters except {}
     /// </summary>
     public const string SpecialCharExceptBraces = @"[!@#$%^&*(),.?""|<>]";
+
+    /// <summary>
+    /// Regex pattern that check for unicode characters in a string. 
+    /// </summary>
+    public const string UnicodeStringPattern = @"\\[Uu]([0-9A-Fa-f]{4})";
 }

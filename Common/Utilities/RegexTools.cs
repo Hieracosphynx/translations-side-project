@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 using Translations.Common.Constants;
 using Translations.Models;
@@ -6,6 +7,12 @@ namespace Translations.Common.Utilities;
 
 public static partial class RegexTools 
 {
+    public static string ParseUnicodeString(string str)
+    {
+        return UnicodeRegex().Replace(str, s => char.ToString(
+                (char)ushort.Parse(s.Groups[1].Value, NumberStyles.AllowHexSpecifier)
+            ));
+    }
 
     /// <summary>
     /// Separates "The.Key": "From the description."
@@ -65,4 +72,7 @@ public static partial class RegexTools
 
     [GeneratedRegex(RegexPatterns.KeyAndTextPattern)]
     private static partial Regex ParseTextEntryRegex();
+
+    [GeneratedRegex(RegexPatterns.UnicodeStringPattern)]
+    private static partial Regex UnicodeRegex();
 }

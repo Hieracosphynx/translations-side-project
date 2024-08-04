@@ -56,10 +56,8 @@ public class TranslationsController : ControllerBase
     * Skims through the file.
     */
     [HttpPost("search")]
-    public async Task<ActionResult<LocalizedText.Results>> Search([FromForm] IFormFile? file)
+    public async Task<ActionResult<LocalizedText.Results>> Search([FromForm] IFormFile file)
     {
-        if(file == null || file.Length == 0) { return NotFound(); }
-
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
 

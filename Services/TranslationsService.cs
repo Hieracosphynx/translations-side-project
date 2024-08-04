@@ -1,4 +1,4 @@
-using System.IO;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -97,12 +97,14 @@ public class TranslationsService
             if(localizedText.Text == null) { continue; }
 
             locTextDictionary.Add(localizedText.Key, localizedText.Text);
-
         }
 
-        string jsonString = JsonSerializer.Serialize(locTextDictionary);
-        Console.WriteLine(jsonString);
-        File.WriteAllText(@"C:\Users\corte\Downloads\temp.json", jsonString);
+        string jsonString = RegexTools.ParseUnicodeString(JsonSerializer.Serialize(locTextDictionary));
+
+        // TODO: Only use for development. This will get removed.
+        //var windowsPath = @"C:\Users\corte\Downloads\temp.json";
+        var macPath = @"/Users/hieracosphynx/Downloads/temp.json";
+        await File.WriteAllTextAsync(macPath, jsonString, Encoding.Default);
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>
