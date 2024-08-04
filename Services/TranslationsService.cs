@@ -6,6 +6,7 @@ using Translations.Models;
 using Translations.Common.Enums;
 using Translations.Common.Utilities;
 using Translations.Common.Constants;
+using Newtonsoft.Json.Linq;
 
 namespace Translations.Services;
 
@@ -100,11 +101,12 @@ public class TranslationsService
         }
 
         string jsonString = RegexTools.ParseUnicodeString(JsonSerializer.Serialize(locTextDictionary));
+        string formattedJsonString = JToken.Parse(jsonString).ToString(Newtonsoft.Json.Formatting.Indented);
 
         // TODO: Only use for development. This will get removed.
-        //var windowsPath = @"C:\Users\corte\Downloads\temp.json";
-        var macPath = @"/Users/hieracosphynx/Downloads/temp.json";
-        await File.WriteAllTextAsync(macPath, jsonString, Encoding.Default);
+        var path = @"C:\Users\corte\Downloads\temp.json";
+        //var path = @"/Users/hieracosphynx/Downloads/temp.json";
+        await File.WriteAllTextAsync(path, formattedJsonString);
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>
