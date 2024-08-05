@@ -1,4 +1,3 @@
-using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Options;
 using MongoDB.Driver;
@@ -12,7 +11,6 @@ namespace Translations.Services;
 
 public class TranslationsService
 {
-    //private IEnumerable<LocalizedText> foundResults; TODO: Still pondering if we need this.
     private readonly IMongoCollection<LocalizedText> _translationsCollection;
 
     public TranslationsService(IOptions<TranslationsDatabaseSettings> translationsDbSettings)
@@ -99,36 +97,44 @@ public class TranslationsService
         {
             if(skipLanguages.Contains(language)) { continue; }
 
-            var filename = language.ToString()+".json";
-            Console.WriteLine(filename);
-            var locTextDictionary = new Dictionary<string, string?>();
+            var foundTextDict = new Dictionary<string, string>();
+            var notFoundTextDict = new Dictionary<string, string>();
+            var filename = language.ToString();
+            var notFoundFilename = filename + "_not_found";
 
             foreach(var localizedTextResult in localizedTextResults)
             {
-                if(localizedTextResult.Text == null) { continue; }
+                if(localizedTextResult.Text is null) { continue; }
 
                 // TODO
-                var localizedTextEntry = GetLanguageTextEntry(localizedTextCollection, localizedTextResult.Key, language); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
+                var localizedTextEntry = localizedTextCollection.Where(doc => doc.Key == localizedTextResult.Key && doc.Language == language).FirstOrDefault(); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
 
-                if(localizedTextEntry == null) 
+                if(localizedTextEntry is null) 
                 { 
-                    Console.WriteLine("Nothing found");
+                    notFoundTextDict.Add(localizedTextResult.Key, localizedTextResult.Text);
                     continue; 
                 }
 
                 Console.WriteLine("{0} => {1}: {2}", filename, localizedTextEntry.Key, localizedTextEntry.Text);
-
-                locTextDictionary.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+                
+                localizedTextEntry.Text ??= "";
+                
+                foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
             }
 
-            //string jsonString = RegexTools.ParseUnicodeString(
-                //JsonSerializer.Serialize(locTextDictionary));
-            //string formattedJsonString = JToken.Parse(jsonString)
-                //.ToString(Newtonsoft.Json.Formatting.Indented);
+            // TODO: Only use for development. This will get removed.
+            var formattedJsonString = Tools.FormatDictionaryToJson(notFoundTextDict);
+            if(notFoundTextDict.Count > 0)
+            {
+                var notFoundPath = @"C:\Users\corte\Downloads\" + notFoundFilename + ".json";
+                await File.WriteAllTextAsync(notFoundPath, formattedJsonString);
+            }
 
-            //// TODO: Only use for development. This will get removed.
-            //var path = @"C:\Users\corte\Downloads\" + filename;
-            //await File.WriteAllTextAsync(path, formattedJsonString);
+            if(foundTextDict.Count == 0) { continue; }
+
+            formattedJsonString = Tools.FormatDictionaryToJson(foundTextDict);
+            var foundPath = @"C:\Users\corte\Downloads\" + filename + ".json";
+            await File.WriteAllTextAsync(foundPath, formattedJsonString);
         }
     }
 
@@ -151,13 +157,6 @@ public class TranslationsService
                 isMatch(doc.GameFranchise, urlParams.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
             (string.IsNullOrEmpty(urlParams.GameName) || 
                 isMatch(doc.GameName, urlParams.GameName, [RegexPatterns.SpecialCharactersPattern])));
-    }
-
-    private static LocalizedText? GetLanguageTextEntry(IEnumerable<LocalizedText> localizedTextEntries, string Key, Language.Codes language)
-    {
-        var isMatch = RegexTools.IsMatch;
-
-        return localizedTextEntries.Where(doc => doc.Key == Key && doc.Language == language).FirstOrDefault();
     }
 
     // TODO: Not sure if this is the best way but I'll go with it.

@@ -30,8 +30,8 @@ public class LocalizedText
     public string? Id { get; set; }
     [BsonElement("Name")]
     public string Key { get; set; } = "This.A.Key"; 
-    public string? Text { get; set; }
-    public Language.Codes? Language { get; set; }
-    public string? GameFranchise { get; set; }
-    public string? GameName { get; set; }
+    public string? Text { get; set; } = "";
+    public Language.Codes? Language { get; set; } = 0;
+    public string? GameFranchise { get; set; } = "";
+    public string? GameName { get; set; } = "";
 }
