@@ -115,8 +115,6 @@ public class TranslationsService
                     continue; 
                 }
 
-                Console.WriteLine("{0} => {1}: {2}", filename, localizedTextEntry.Key, localizedTextEntry.Text);
-                
                 localizedTextEntry.Text ??= "";
                 
                 foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
