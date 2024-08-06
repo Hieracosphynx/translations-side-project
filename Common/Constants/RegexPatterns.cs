@@ -8,17 +8,17 @@ public static class RegexPatterns
     public const string KeyAndTextPattern = @"""([^""]+)"": ""([^""]+)""(,)?";
 
     /// <summary>
-    /// Regex pattern that removed {myComplexImage} in texts",
+    /// Regex pattern that represents {myComplexImage} and |||Untranslated Part||| in texts",
     /// </summary>
-    public const string ComplexStringPattern = @"\{[^}]*\}";
+    public const string ComplexStringPattern = @"\{[^}]*\}|\|\|\|.*?\|\|\|";
 
     /// <summary>
-    /// Regex pattern that removes special characters in texts.
+    /// Regex pattern that represents special characters in texts.
     /// </summary>
     public const string SpecialCharactersPattern = @"[!@#$%^&*(),.?""{}|<>]";
 
     /// <summary>
-    /// Regex pattern that removes special characters except {}
+    /// Regex pattern that represents special characters except {}
     /// </summary>
     public const string SpecialCharExceptBraces = @"[!@#$%^&*(),.?""|<>]";
 
