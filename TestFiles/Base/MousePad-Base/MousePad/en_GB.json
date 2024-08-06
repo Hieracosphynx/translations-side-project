@@ -6,5 +6,6 @@
   "Feature.Example.NotInCollection.AA": "Lorem ipsum...",
   "Feature.Example.NotInCollection.AB": "Dolor sit amet...",
   "Feature.Example.NotInCollection.AC": "What Why When How...",
-  "Feature.Example.NotInCollection.AD": "Rolod rowjn..."
+  "Feature.Example.NotInCollection.AD": "Rolod rowjn...",
+  "Feature.TriplePipes.AA": "This is English.|||English|||..."
 }

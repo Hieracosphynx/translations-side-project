@@ -56,7 +56,7 @@ public class TranslationsController : ControllerBase
     * Skims through the file.
     */
     [HttpPost("search")]
-    public async Task<ActionResult<LocalizedText.Results>> Search([FromForm] IFormFile file)
+    public async Task<IActionResult> Search([FromForm] IFormFile file)
     {
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
@@ -64,12 +64,13 @@ public class TranslationsController : ControllerBase
 
         var results = await _translationsService.ProcessFileAsync(file, gameName, gameFranchise, localizedTextCollection); 
         
-        if(results.FoundTextEntries != null) 
-        {
-            await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
-        }
+        if(results.FoundTextEntries is null || results.FoundTextEntries.Count == 0) { return NotFound(); }
+        
+        var zipFile = await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
+        var zipFilename = DateTime.Now.ToString() + "_" + gameFranchise + "_" + gameName;
+        var zipFilepath = Path.ChangeExtension(zipFilename, ".zip");
 
-        return results;
+        return File(zipFile, "application/zip", zipFilepath);
     }
 
     [HttpPost]

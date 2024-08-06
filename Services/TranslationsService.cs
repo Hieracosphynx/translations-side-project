@@ -1,11 +1,12 @@
-using System.Text.Json;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Translations.Models;
 using Translations.Common.Enums;
 using Translations.Common.Utilities;
 using Translations.Common.Constants;
-using Newtonsoft.Json.Linq;
+using System.IO.Compression;
+using System.Text;
 
 namespace Translations.Services;
 
@@ -84,7 +85,7 @@ public class TranslationsService
         return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
-    public async Task GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
+    public async Task<byte[]> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.
         var languages = Enum.GetValues(typeof(Language.Codes)).Cast<Language.Codes>();
@@ -93,46 +94,65 @@ public class TranslationsService
             Language.Codes.en_GB, 
             Language.Codes.en_US];
 
+        var jsonFiles = new List<(string filename, string content)>();
         foreach(var language in languages)
         {
             if(skipLanguages.Contains(language)) { continue; }
 
             var foundTextDict = new Dictionary<string, string>();
             var notFoundTextDict = new Dictionary<string, string>();
-            var filename = language.ToString();
-            var notFoundFilename = filename + "_not_found";
+            var languageString = language.ToString();
+            var filename = Path.ChangeExtension(languageString, ".json");
+            var notFoundFilename = Path.ChangeExtension(languageString + "_not_found", ".json");
 
             foreach(var localizedTextResult in localizedTextResults)
             {
                 if(localizedTextResult.Text is null) { continue; }
 
-                // TODO
                 var localizedTextEntry = localizedTextCollection.Where(doc => doc.Key == localizedTextResult.Key && doc.Language == language).FirstOrDefault(); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
+                var key = localizedTextResult.Key;
 
                 if(localizedTextEntry is null) 
                 { 
-                    notFoundTextDict.Add(localizedTextResult.Key, localizedTextResult.Text);
+                    notFoundTextDict.Add(key, localizedTextResult.Text);
                     continue; 
                 }
 
                 localizedTextEntry.Text ??= "";
                 
-                foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+                foundTextDict.Add(key, localizedTextEntry.Text);
             }
 
-            // TODO: Only use for development. This will get removed.
             var formattedJsonString = Tools.FormatDictionaryToJson(notFoundTextDict);
             if(notFoundTextDict.Count > 0)
             {
-                var notFoundPath = @"C:\Users\corte\Downloads\" + notFoundFilename + ".json";
-                await File.WriteAllTextAsync(notFoundPath, formattedJsonString);
+                jsonFiles.Add((notFoundFilename, formattedJsonString));
             }
 
             if(foundTextDict.Count == 0) { continue; }
 
             formattedJsonString = Tools.FormatDictionaryToJson(foundTextDict);
-            var foundPath = @"C:\Users\corte\Downloads\" + filename + ".json";
-            await File.WriteAllTextAsync(foundPath, formattedJsonString);
+            jsonFiles.Add((filename, formattedJsonString));
+        }
+
+        // Creates all json files and put into a zip file.
+        using(var memoryStream = new MemoryStream())
+        {
+            using(var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+            {
+                foreach(var (filename, content) in jsonFiles)
+                {
+                    var zipEntry = archive.CreateEntry(filename);
+                    using(var zipStream = zipEntry.Open())
+                    using(var writer = new StreamWriter(zipStream, Encoding.UTF8))
+                    {
+                        await writer.WriteAsync(content);
+                    }
+                }
+            }
+
+            memoryStream.Position = 0;
+            return memoryStream.ToArray();
         }
     }
 
