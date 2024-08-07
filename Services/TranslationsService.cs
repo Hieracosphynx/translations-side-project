@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Options;
-using Microsoft.AspNetCore.Mvc;
 using MongoDB.Driver;
 using Translations.Models;
 using Translations.Common.Enums;
@@ -85,7 +84,7 @@ public class TranslationsService
         return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
-    public async Task<byte[]> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
+    public async Task<IEnumerable<LocalizedText.FileAndContent>> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.
         var languages = Enum.GetValues(typeof(Language.Codes)).Cast<Language.Codes>();
@@ -94,7 +93,7 @@ public class TranslationsService
             Language.Codes.en_GB, 
             Language.Codes.en_US];
 
-        var jsonFiles = new List<(string filename, string content)>();
+        var jsonFiles = new List<LocalizedText.FileAndContent>();
         foreach(var language in languages)
         {
             if(skipLanguages.Contains(language)) { continue; }
@@ -109,7 +108,9 @@ public class TranslationsService
             {
                 if(localizedTextResult.Text is null) { continue; }
 
-                var localizedTextEntry = localizedTextCollection.Where(doc => doc.Key == localizedTextResult.Key && doc.Language == language).FirstOrDefault(); // TODO Probably do this in ProcessFileAsync OR cache / store result from that function and use it here??
+                var localizedTextEntry = localizedTextCollection.Where(doc => 
+                    doc.Key == localizedTextResult.Key && 
+                    doc.Language == language).FirstOrDefault();
                 var key = localizedTextResult.Key;
 
                 if(localizedTextEntry is null) 
@@ -126,34 +127,34 @@ public class TranslationsService
             var formattedJsonString = Tools.FormatDictionaryToJson(notFoundTextDict);
             if(notFoundTextDict.Count > 0)
             {
-                jsonFiles.Add((notFoundFilename, formattedJsonString));
+                jsonFiles.Add(new(notFoundFilename, formattedJsonString));
             }
 
             if(foundTextDict.Count == 0) { continue; }
 
             formattedJsonString = Tools.FormatDictionaryToJson(foundTextDict);
-            jsonFiles.Add((filename, formattedJsonString));
+            jsonFiles.Add(new(filename, formattedJsonString));
         }
 
-        // Creates all json files and put into a zip file.
-        using(var memoryStream = new MemoryStream())
+        return jsonFiles;
+    }
+
+    public async Task<byte[]> GenerateZipFileAsync(IEnumerable<LocalizedText.FileAndContent> results)
+    {
+        using var memoryStream = new MemoryStream();
+        using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
         {
-            using(var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
+            foreach (var result in results)
             {
-                foreach(var (filename, content) in jsonFiles)
-                {
-                    var zipEntry = archive.CreateEntry(filename);
-                    using(var zipStream = zipEntry.Open())
-                    using(var writer = new StreamWriter(zipStream, Encoding.UTF8))
-                    {
-                        await writer.WriteAsync(content);
-                    }
-                }
+                var zipEntry = archive.CreateEntry(result.Filename);
+                using var zipStream = zipEntry.Open();
+                using var writer = new StreamWriter(zipStream, Encoding.UTF8);
+                await writer.WriteAsync(Tools.ParseJsonToReadable(result.Content));
             }
-
-            memoryStream.Position = 0;
-            return memoryStream.ToArray();
         }
+
+        memoryStream.Position = 0;
+        return memoryStream.ToArray();
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>

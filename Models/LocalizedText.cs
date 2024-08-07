@@ -21,8 +21,14 @@ public class LocalizedText
 
     public class Results(List<LocalizedText> found, List<LocalizedText> notFound)
     {
-        public List<LocalizedText>? FoundTextEntries { get; set; } = found;
-        public List<LocalizedText>? NotFoundTextEntries { get; set; } = notFound;
+        public List<LocalizedText> FoundTextEntries { get; set; } = found;
+        public List<LocalizedText> NotFoundTextEntries { get; set; } = notFound;
+    }
+
+    public class FileAndContent(string filename, string content)
+    {
+        public string Filename { get; set; } = filename;
+        public string Content { get; set; } = content;
     }
 
     [BsonId]

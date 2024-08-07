@@ -52,11 +52,13 @@ public class TranslationsController : ControllerBase
         return Ok(localizedTextEntries);
     }
 
-    /**
-    * Skims through the file.
-    */
+    /// <summary>
+    /// Reads the file given. This will return found and not found text entries for each languages.
+    /// </summary>
+    /// <param name="file"></param>
+    /// <returns></returns>
     [HttpPost("search")]
-    public async Task<IActionResult> Search([FromForm] IFormFile file)
+    public async Task<ActionResult<IEnumerable<LocalizedText.FileAndContent>>> Search([FromForm] IFormFile file)
     {
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
@@ -66,7 +68,23 @@ public class TranslationsController : ControllerBase
         
         if(results.FoundTextEntries is null || results.FoundTextEntries.Count == 0) { return NotFound(); }
         
-        var zipFile = await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
+        var localizedTextResults = await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
+        
+        return Ok(localizedTextResults);
+    }
+
+    /// <summary>
+    /// Generates the zip file using the results from POST /search. 
+    /// </summary>
+    /// <param name="results">Results that came from POST /search</param>
+    /// <returns>Zip file that contains json files.</returns>
+    [HttpPost("generate")]
+    public async Task<IActionResult> Generate(IEnumerable<LocalizedText.FileAndContent> results)
+    {
+        string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
+        string? gameName = HttpContext.Request.Query["gameName"];
+
+        var zipFile = await _translationsService.GenerateZipFileAsync(results);
         var zipFilename = DateTime.Now.ToString() + "_" + gameFranchise + "_" + gameName;
         var zipFilepath = Path.ChangeExtension(zipFilename, ".zip");
 

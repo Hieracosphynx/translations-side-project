@@ -6,11 +6,11 @@ public static class Tools
 {
     public static string FormatDictionaryToJson(Dictionary<string, string> dict)
     {
-        string jsonString = RegexTools.ParseUnicodeString(
-            JsonSerializer.Serialize(dict));
-        string formattedJsonString = JToken.Parse(jsonString)
-            .ToString(Newtonsoft.Json.Formatting.Indented);
+        return RegexTools.ParseUnicodeString(JsonSerializer.Serialize(dict));
+    }
 
-        return formattedJsonString;
+    public static string ParseJsonToReadable(string jsonString)
+    {
+        return JToken.Parse(jsonString).ToString(Newtonsoft.Json.Formatting.Indented);
     }
 }
