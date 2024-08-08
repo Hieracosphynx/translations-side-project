@@ -57,11 +57,11 @@ public class TranslationsController : ControllerBase
 
         var results = await _translationsService.ProcessFileAsync(file, gameName, gameFranchise, localizedTextCollection); 
         
-        if(results.FoundTextEntries is null || results.FoundTextEntries.Count == 0) { return NotFound(); }
+        if(results is null) { return NotFound(); }
         
-        var localizedTextResults = _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
+        var jsonResults = _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
         
-        return Ok(localizedTextResults);
+        return Ok(jsonResults);
     }
 
     /// <summary>
@@ -93,39 +93,11 @@ public class TranslationsController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] LocalizedText.FormData formData)
     {
-        // TODO: Move to services
         var files = formData.Files;
+
         if(files == null || files.Length == 0) { return BadRequest("No file uploaded"); }
 
-        for(var index = 0; index < files.Length; index++)
-        {
-            var file = files[index];
-            using(var reader = new StreamReader(file.OpenReadStream()))
-            {
-                var lineIndex = 0;
-                while(reader.Peek() >= lineIndex)
-                {
-                    var text = reader.ReadLine();
-
-                    if(text == "{" || text == "}" || text == null || text == ""){ continue; }
-
-                    var fileName = Path.GetFileNameWithoutExtension(file.FileName);
-                    var parsedTextEntry = RegexTools.ParseTextEntry(text);
-                    var localizedTextEntry = new LocalizedText() 
-                    { 
-                        Key = parsedTextEntry.Key, 
-                        Text = parsedTextEntry.Value,
-                        Language = Language.GetLanguageCodeEnum(fileName),
-                        GameFranchise = formData.GameFranchise ?? "",
-                        GameName = formData.GameName ?? "" 
-                    };
-
-                    lineIndex++;
-
-                    await _translationsService.CreateAsync(localizedTextEntry);
-                }
-            }
-        }        
+        await _translationsService.UploadAsync(formData);
 
         return Ok(new { message = "Successfully uploaded" });
     }

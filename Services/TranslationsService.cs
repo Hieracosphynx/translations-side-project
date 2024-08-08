@@ -6,6 +6,7 @@ using Translations.Common.Utilities;
 using Translations.Common.Constants;
 using System.IO.Compression;
 using System.Text;
+using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 
 namespace Translations.Services;
 
@@ -156,6 +157,36 @@ public class TranslationsService
 
         memoryStream.Position = 0;
         return memoryStream.ToArray();
+    }
+
+    public async Task UploadAsync(LocalizedText.FormData formData)
+    {
+        var files = formData.Files;
+        var skipStrings = new string[]{"", "{", "}"};
+        for(var index = 0; index < files.Length; index++)
+        {
+            var file = files[index];
+            using var reader = new StreamReader(file.OpenReadStream());
+            while(!reader.EndOfStream)
+            {
+                var text = reader.ReadLine();
+
+                if(skipStrings.Contains(text) || text == null) { continue; }
+
+                var filename = Path.GetFileNameWithoutExtension(file.FileName);
+                var parsedTextEntry = RegexTools.ParseTextEntry(text);
+                var localizedTextEntry = new LocalizedText()
+                {
+                    Key = parsedTextEntry.Key,
+                    Text = parsedTextEntry.Value,
+                    Language = Language.GetLanguageCodeEnum(filename),
+                    GameFranchise = formData.GameFranchise ?? "",
+                    GameName = formData.GameName ?? "",
+                };
+
+                await CreateAsync(localizedTextEntry);
+            }
+        }
     }
 
     public async Task CreateAsync(LocalizedText newLocalizedText) =>
