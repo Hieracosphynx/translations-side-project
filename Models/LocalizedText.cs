@@ -6,29 +6,29 @@ namespace Translations.Models;
 
 public class LocalizedText
 {
-    public class ParsedTextEntry
+    public record ParsedTextEntry
     {
         public string Key { get; set; } = "";
         public string Value { get; set; } = "";
     }
 
-    public class FormData
+    public record FormData
     {
         public IFormFile[] Files { get; set; } = [];
         public string? GameFranchise { get; set; }
         public string? GameName { get; set; }
     }
 
-    public class Results(List<LocalizedText> found, List<LocalizedText> notFound)
+    public record Results(List<LocalizedText> Found, List<LocalizedText> NotFound)
     {
-        public List<LocalizedText> FoundTextEntries { get; set; } = found;
-        public List<LocalizedText> NotFoundTextEntries { get; set; } = notFound;
+        public List<LocalizedText> FoundTextEntries { get; set; } = Found;
+        public List<LocalizedText> NotFoundTextEntries { get; set; } = NotFound;
     }
 
-    public class FileAndContent(string filename, string content)
+    public record FileAndContent(string Filename, Dictionary<string, string> Content)
     {
-        public string Filename { get; set; } = filename;
-        public string Content { get; set; } = content;
+        public string Filename { get; set; } = Filename;
+        public Dictionary<string, string> Content { get; set; } = Content;
     }
 
     [BsonId]

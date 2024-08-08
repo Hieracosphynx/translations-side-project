@@ -84,7 +84,7 @@ public class TranslationsService
         return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
-    public async Task<IEnumerable<LocalizedText.FileAndContent>> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
+    public IEnumerable<LocalizedText.FileAndContent> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.
         var languages = Enum.GetValues(typeof(Language.Codes)).Cast<Language.Codes>();
@@ -124,16 +124,16 @@ public class TranslationsService
                 foundTextDict.Add(key, localizedTextEntry.Text);
             }
 
-            var formattedJsonString = Tools.FormatDictionaryToJson(notFoundTextDict);
+            var jsonString = notFoundTextDict;
             if(notFoundTextDict.Count > 0)
             {
-                jsonFiles.Add(new(notFoundFilename, formattedJsonString));
+                jsonFiles.Add(new(notFoundFilename, jsonString));
             }
 
             if(foundTextDict.Count == 0) { continue; }
 
-            formattedJsonString = Tools.FormatDictionaryToJson(foundTextDict);
-            jsonFiles.Add(new(filename, formattedJsonString));
+            jsonString = foundTextDict;
+            jsonFiles.Add(new(filename, jsonString));
         }
 
         return jsonFiles;
@@ -149,7 +149,8 @@ public class TranslationsService
                 var zipEntry = archive.CreateEntry(result.Filename);
                 using var zipStream = zipEntry.Open();
                 using var writer = new StreamWriter(zipStream, Encoding.UTF8);
-                await writer.WriteAsync(Tools.ParseJsonToReadable(result.Content));
+                var formattedJsonString = Tools.FormatDictionaryToJson(result.Content);
+                await writer.WriteAsync(Tools.ParseJsonToReadable(formattedJsonString));
             }
         }
 

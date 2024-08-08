@@ -1,17 +1,8 @@
-using System.IO;
-using System.Text.RegularExpressions;
 using Translations.Models;
 using Translations.Services;
 using Translations.Common.Enums;
 using Translations.Common.Utilities;
-using Translations.Common.Constants;
 using Microsoft.AspNetCore.Mvc;
-
-// Debugging
-using System.ComponentModel;
-using Microsoft.AspNetCore.Mvc.ActionConstraints;
-using Microsoft.AspNetCore.Http.Extensions;
-using System.Web;
 
 namespace Translations.Controllers;
 
@@ -68,7 +59,7 @@ public class TranslationsController : ControllerBase
         
         if(results.FoundTextEntries is null || results.FoundTextEntries.Count == 0) { return NotFound(); }
         
-        var localizedTextResults = await _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
+        var localizedTextResults = _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
         
         return Ok(localizedTextResults);
     }
