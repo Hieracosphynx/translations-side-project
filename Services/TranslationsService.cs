@@ -88,6 +88,7 @@ public class TranslationsService
         return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
+    // TODO: localizedTextResults SHOULD be LocalizedText.Results (contains both found and not found erntries)...
     public IEnumerable<LocalizedText.FileAndContent> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.

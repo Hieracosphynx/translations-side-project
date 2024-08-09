@@ -1,11 +1,14 @@
 {
-  "Help.Disclaimer.A1": "New range of formal shirts are designed keeping you in mind. With fits and styling that will make you stand apart",
-  "Help.Disclaimer.A2": "The beautiful range of Apple Naturalé that has an exciting mix of natural ingredients. With the Goodness of 100% Natural Ingredients",
-  "Help.Disclaimer.A3": "The Apollotech B340 is an affordable wireless mouse with reliable connectivity, 12 months battery life and modern design",
-  "Feature.Example.Test.A1": "The eeeeeeeee range of Apple Naturalé that has an exciting mix of natural ingredients. With the Goodness of 100% Natural Ingredients {complex}.",
-  "Feature.Example.NotInCollection.AA": "Lorem ipsum...",
-  "Feature.Example.NotInCollection.AB": "Dolor sit amet...",
-  "Feature.Example.NotInCollection.AC": "What Why When How...",
-  "Feature.Example.NotInCollection.AD": "Rolod rowjn...",
-  "Feature.TriplePipes.AA": "This is English.|||English|||..."
+  "Help.Disclaimer.Normal": "This is a dummy translation.. English.",
+  "Help.Disclaimer.Complex.Beginning": "{myComplex} at the beginning.. English.",
+  "Help.Disclaimer.Complex.Middle": "The label {myComplex} is at the middle.. English.",
+  "Help.Disclaimer.Complex.End": "The label is the end.. English. {myComplex}",
+  "Help.Disclaimer.TriplePipes.Beginning": "|||Triple Pipes||| at the beginning. English.",
+  "Help.Disclaimer.TriplePipes.Middle": "The pipes |||Triple Pipes||| at the middle. English.",
+  "Help.Dislaimer.TriplePipes.End": "The pipes are at the end. English. |||Triple Pipes|||.",
+  "FreeSpins.Winner": "WINNER!",
+  "FreeSpins.Jackpot": "JACKPOT!",
+  "FreeSpins.YouWon": "YOU WON!",
+  "Missing.Translation": "Missing translations. Only the English Language.",
+  "Missing.Translation.With.Japanese": "Missing translations but with Japanese and English."
 }
