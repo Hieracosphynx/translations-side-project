@@ -4,9 +4,9 @@ using Translations.Models;
 using Translations.Common.Enums;
 using Translations.Common.Utilities;
 using Translations.Common.Constants;
+using Translations.Common.Types;
 using System.IO.Compression;
 using System.Text;
-using Microsoft.VisualStudio.Web.CodeGenerators.Mvc.Templates.Blazor;
 
 namespace Translations.Services;
 
@@ -32,24 +32,26 @@ public class TranslationsService
     public async Task<LocalizedText?> GetAsync(string id) =>
         await _translationsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    public async Task<IEnumerable<LocalizedText>> GetAsync(string? text, string? gameFranchise, string? gameName)
+    public async Task<IEnumerable<LocalizedText>> GetAsync(SearchTextContext textContext)
     {
-        URLParameters urlParams = new(text, gameFranchise, gameName);
-
         var localizedTexts = await _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToListAsync();
 
-        return MatchLocalizedTextEntries(localizedTexts, urlParams);
+        return MatchLocalizedTextEntries(localizedTexts, textContext);
     }
 
     /**
     * Handles matching text from the file.
     **/
-    public async Task<LocalizedText.Results> ProcessFileAsync(IFormFile file, string? gameName, string? gameFranchise, IEnumerable<LocalizedText> localizedTextCollection)
+    public async Task<LocalizedText.Results> ProcessFileAsync(SearchFileContext fileContext, IEnumerable<LocalizedText> localizedTextCollection)
     {
+        var (gameFranchise, gameName, jsonFile) = fileContext;
+
         List<LocalizedText> foundLocalizedTexts = [];
         List<LocalizedText> notFoundLocalizedTexts = [];
 
-        using(var reader = new StreamReader(file.OpenReadStream()))
+        if(jsonFile is null) { return new LocalizedText.Results([], []); }
+
+        using(var reader = new StreamReader(jsonFile.OpenReadStream()))
         {
             while(!reader.EndOfStream)
             {
@@ -58,13 +60,14 @@ public class TranslationsService
                 if(text == null || text == "{" || text == "}") { continue; }
                 
                 var parsedTextEntry = RegexTools.ParseTextEntry(text);
-                URLParameters urlParams = new(parsedTextEntry.Value, gameFranchise, gameName);
 
-                var localizedText = MatchLocalizedTextEntries(localizedTextCollection, urlParams).FirstOrDefault();
+                SearchTextContext searchCriteria = new(gameFranchise, gameName, parsedTextEntry.Value);
+
+                var localizedText = MatchLocalizedTextEntries(localizedTextCollection, searchCriteria).FirstOrDefault();
 
                 if(localizedText == null) 
                 { 
-                    var fileName = Path.GetFileNameWithoutExtension(file.FileName);
+                    var fileName = Path.GetFileNameWithoutExtension(jsonFile.FileName);
                     LocalizedText localizedTextEntry = new(){
                         Key = parsedTextEntry.Key,
                         Text = parsedTextEntry.Value,
@@ -116,13 +119,19 @@ public class TranslationsService
 
                 if(localizedTextEntry is null) 
                 { 
-                    notFoundTextDict.Add(key, localizedTextResult.Text);
+                    if(!notFoundTextDict.ContainsKey(key))
+                    {
+                        notFoundTextDict.Add(key, localizedTextResult.Text);
+                    }
                     continue; 
                 }
 
                 localizedTextEntry.Text ??= "";
-                
-                foundTextDict.Add(key, localizedTextEntry.Text);
+
+                if(!foundTextDict.ContainsKey(key))
+                {
+                    foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+                }
             }
 
             var jsonString = notFoundTextDict;
@@ -198,23 +207,15 @@ public class TranslationsService
     public async Task RemoveAsync(string id) =>
         await _translationsCollection.DeleteOneAsync(x => x.Id == id);
 
-    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(IEnumerable<LocalizedText> localizedTextEntries, URLParameters urlParams)
+    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(IEnumerable<LocalizedText> localizedTextEntries, SearchTextContext searchContext)
     {
         var isMatch = RegexTools.IsMatch;
 
         return localizedTextEntries.Where(doc =>
-            isMatch(doc.Text, urlParams.Text, [RegexPatterns.SpecialCharExceptBraces,RegexPatterns.ComplexStringPattern]) &&
-            (string.IsNullOrEmpty(urlParams.GameFranchise) || 
-                isMatch(doc.GameFranchise, urlParams.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
-            (string.IsNullOrEmpty(urlParams.GameName) || 
-                isMatch(doc.GameName, urlParams.GameName, [RegexPatterns.SpecialCharactersPattern])));
-    }
-
-    // TODO: Not sure if this is the best way but I'll go with it.
-    private struct URLParameters(string? text, string? gameFranchise, string? gameName)
-    {
-        public string? Text { get; set; } = text;
-        public string? GameName { get; set; } = gameName;
-        public string? GameFranchise { get; set; } = gameFranchise;
+            isMatch(doc.Text, searchContext.Text, [RegexPatterns.SpecialCharExceptBraces, RegexPatterns.ComplexStringPattern]) &&
+            (string.IsNullOrEmpty(searchContext.GameFranchise) || 
+                isMatch(doc.GameFranchise, searchContext.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
+            (string.IsNullOrEmpty(searchContext.GameName) || 
+                isMatch(doc.GameName, searchContext.GameName, [RegexPatterns.SpecialCharactersPattern])));
     }
 }

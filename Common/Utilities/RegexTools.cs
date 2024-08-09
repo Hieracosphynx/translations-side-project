@@ -26,9 +26,9 @@ public static partial class RegexTools
 
         foreach(Match match in ParseTextEntryRegex().Matches(text))
         {
+            string key = match.Groups[1].Value;
             if(match.Success)
             {
-                string key = match.Groups[1].Value;
                 string value = match.Groups[2].Value;
 
                 parsedTextEntry.Key = key;

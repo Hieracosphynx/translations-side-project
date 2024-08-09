@@ -1,7 +1,6 @@
 using Translations.Models;
 using Translations.Services;
-using Translations.Common.Enums;
-using Translations.Common.Utilities;
+using Translations.Common.Types;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Translations.Controllers;
@@ -32,11 +31,13 @@ public class TranslationsController : ControllerBase
     [HttpGet("search")]
     public async Task<ActionResult<IEnumerable<LocalizedText>>> Search()
     {
-        string? text = HttpContext.Request.Query["text"];
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
+        string? text = HttpContext.Request.Query["text"];
 
-        IEnumerable<LocalizedText>? localizedTextEntries = await _translationsService.GetAsync(text, gameFranchise, gameName);
+        SearchTextContext textContext = new(gameFranchise, gameName, text);
+
+        IEnumerable<LocalizedText>? localizedTextEntries = await _translationsService.GetAsync(textContext);
 
         if(localizedTextEntries is null) return NotFound();
 
@@ -55,7 +56,9 @@ public class TranslationsController : ControllerBase
         string? gameName = HttpContext.Request.Query["gameName"];
         IEnumerable<LocalizedText> localizedTextCollection = await _translationsService.GetAsync();
 
-        var results = await _translationsService.ProcessFileAsync(file, gameName, gameFranchise, localizedTextCollection); 
+        SearchFileContext fileContext = new(gameFranchise, gameName, file);
+
+        var results = await _translationsService.ProcessFileAsync(fileContext, localizedTextCollection); 
         
         if(results is null) { return NotFound(); }
         
