@@ -21,7 +21,7 @@ public record SearchTextContext(string? GameFranchise, string? GameName, string?
     }
 }
 
-public class SearchFileContext(string? GameFranchise, string? GameName, IFormFile JsonFile)
+public record SearchFileContext(string? GameFranchise, string? GameName, IFormFile JsonFile)
 {
     public void Deconstruct(out string? gameFranchise, out string? gameName, out IFormFile jsonFile)
     {
