@@ -68,7 +68,7 @@ public class TranslationsController : ControllerBase
     }
 
     /// <summary>
-    /// Generates the zip file using the results from POST /search. 
+    /// Generates a zip file using the results from POST /search. 
     /// </summary>
     /// <param name="results">Results that came from POST /search</param>
     /// <returns>Zip file that contains json files.</returns>

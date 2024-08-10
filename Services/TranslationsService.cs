@@ -8,6 +8,8 @@ using Translations.Common.Types;
 using System.IO.Compression;
 using System.Text;
 
+using LocalizedTextResult = Translations.Common.Types.LocalizedTextTypes.LocalizedTextResult;
+
 namespace Translations.Services;
 
 public class TranslationsService
@@ -39,6 +41,7 @@ public class TranslationsService
         return MatchLocalizedTextEntries(localizedTexts, textContext);
     }
 
+    //TODO: Refactor 
     /**
     * Handles matching text from the file.
     **/
@@ -46,7 +49,7 @@ public class TranslationsService
     {
         var (gameFranchise, gameName, jsonFile) = fileContext;
 
-        List<LocalizedText> foundLocalizedTexts = [];
+        List<LocalizedTextResult> foundLocalizedTexts = [];
         List<LocalizedText> notFoundLocalizedTexts = [];
 
         if(jsonFile is null) { return new LocalizedTextTypes.Results([], []); }
@@ -81,13 +84,21 @@ public class TranslationsService
                     continue; 
                 }
 
-                foundLocalizedTexts.Add(localizedText);
+                LocalizedTextResult localizedTextResult = new(localizedText, parsedTextEntry.Key);
+
+                foundLocalizedTexts.Add(localizedTextResult);
             }
+        }
+        
+        foreach(var found in foundLocalizedTexts)
+        {
+            Console.WriteLine("Found=>{0}: {1}: {2}", found.OriginalKey, found.Key, found.Text);
         }
 
         return new LocalizedTextTypes.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
+    //TODO: Refactor 
     public IEnumerable<LocalizedTextTypes.FileAndContent> GenerateJSONDocumentsAsync(LocalizedTextTypes.Results localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.
@@ -133,7 +144,7 @@ public class TranslationsService
                     var localizedTextEntry = localizedTextCollection.Where(doc => 
                         doc.Key == localizedTextResult.Key && 
                         doc.Language == language).FirstOrDefault();
-                    var key = localizedTextResult.Key;
+                    var key = localizedTextResult.OriginalKey;
 
                     if(localizedTextEntry is null) 
                     { 
@@ -148,7 +159,7 @@ public class TranslationsService
 
                     if(!foundTextDict.ContainsKey(key))
                     {
-                        foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+                        foundTextDict.Add(key, localizedTextEntry.Text);
                     }
                 }
 
