@@ -1,7 +1,8 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Translations.Common.Types;
+//using Translations.Models;
 using Translations.Common.Constants;
-using Translations.Models;
 
 namespace Translations.Common.Utilities;
 
@@ -20,16 +21,16 @@ public static partial class RegexTools
     /// <param name="text"></param>
     /// <param name="pattern"></param>
     /// <returns>ParsedTextEntry { Key, Value }</returns>
-    public static LocalizedText.ParsedTextEntry ParseTextEntry(string text)
+    public static LocalizedTextTypes.ParsedTextEntry ParseTextEntry(string text)
     {
-        LocalizedText.ParsedTextEntry parsedTextEntry = new();
+        LocalizedTextTypes.ParsedTextEntry parsedTextEntry = new();
 
         foreach(Match match in ParseTextEntryRegex().Matches(text))
         {
-            string key = match.Groups[1].Value;
             if(match.Success)
             {
                 string value = match.Groups[2].Value;
+                string key = match.Groups[1].Value;
 
                 parsedTextEntry.Key = key;
                 parsedTextEntry.Value = value;

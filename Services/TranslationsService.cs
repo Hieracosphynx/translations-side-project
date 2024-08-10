@@ -32,7 +32,7 @@ public class TranslationsService
     public async Task<LocalizedText?> GetAsync(string id) =>
         await _translationsCollection.Find(x => x.Id == id).FirstOrDefaultAsync();
 
-    public async Task<IEnumerable<LocalizedText>> GetAsync(SearchTextContext textContext)
+    public async Task<IEnumerable<LocalizedText>> GetAsync(SearchContextTypes.SearchTextContext textContext)
     {
         var localizedTexts = await _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToListAsync();
 
@@ -42,14 +42,14 @@ public class TranslationsService
     /**
     * Handles matching text from the file.
     **/
-    public async Task<LocalizedText.Results> ProcessFileAsync(SearchFileContext fileContext, IEnumerable<LocalizedText> localizedTextCollection)
+    public async Task<LocalizedTextTypes.Results> ProcessFileAsync(SearchContextTypes.SearchFileContext fileContext, IEnumerable<LocalizedText> localizedTextCollection)
     {
         var (gameFranchise, gameName, jsonFile) = fileContext;
 
         List<LocalizedText> foundLocalizedTexts = [];
         List<LocalizedText> notFoundLocalizedTexts = [];
 
-        if(jsonFile is null) { return new LocalizedText.Results([], []); }
+        if(jsonFile is null) { return new LocalizedTextTypes.Results([], []); }
 
         using(var reader = new StreamReader(jsonFile.OpenReadStream()))
         {
@@ -61,7 +61,7 @@ public class TranslationsService
                 
                 var parsedTextEntry = RegexTools.ParseTextEntry(text);
 
-                SearchTextContext searchCriteria = new(gameFranchise, gameName, parsedTextEntry.Value);
+                SearchContextTypes.SearchTextContext searchCriteria = new(gameFranchise, gameName, parsedTextEntry.Value);
 
                 var localizedText = MatchLocalizedTextEntries(localizedTextCollection, searchCriteria).FirstOrDefault();
 
@@ -85,11 +85,10 @@ public class TranslationsService
             }
         }
 
-        return new LocalizedText.Results(foundLocalizedTexts, notFoundLocalizedTexts);
+        return new LocalizedTextTypes.Results(foundLocalizedTexts, notFoundLocalizedTexts);
     }
 
-    // TODO: localizedTextResults SHOULD be LocalizedText.Results (contains both found and not found erntries)...
-    public IEnumerable<LocalizedText.FileAndContent> GenerateJSONDocumentsAsync(LocalizedText.Results localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
+    public IEnumerable<LocalizedTextTypes.FileAndContent> GenerateJSONDocumentsAsync(LocalizedTextTypes.Results localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.
         var languages = Enum.GetValues(typeof(Language.Codes)).Cast<Language.Codes>();
@@ -98,11 +97,11 @@ public class TranslationsService
             Language.Codes.en_GB, 
             Language.Codes.en_US];
 
-        var jsonFiles = new List<LocalizedText.FileAndContent>();
+        var jsonFiles = new List<LocalizedTextTypes.FileAndContent>();
 
         if(localizedTextResults.NotFoundTextEntries.Count > 0)
         {
-            var notInDatabaseName = "NotInDatabase.json";
+            var notInDatabaseName = "Not_In_Database.json";
             var notInDatabaseDict = new Dictionary<string, string>();
         
             foreach(var textEntry in localizedTextResults.NotFoundTextEntries)
@@ -169,7 +168,7 @@ public class TranslationsService
         return jsonFiles;
     }
 
-    public async Task<byte[]> GenerateZipFileAsync(IEnumerable<LocalizedText.FileAndContent> results)
+    public async Task<byte[]> GenerateZipFileAsync(IEnumerable<LocalizedTextTypes.FileAndContent> results)
     {
         using var memoryStream = new MemoryStream();
         using (var archive = new ZipArchive(memoryStream, ZipArchiveMode.Create, true))
@@ -188,7 +187,7 @@ public class TranslationsService
         return memoryStream.ToArray();
     }
 
-    public async Task UploadAsync(LocalizedText.FormData formData)
+    public async Task UploadAsync(LocalizedTextTypes.FormData formData)
     {
         var files = formData.Files;
         var skipStrings = new string[]{"", "{", "}"};
@@ -227,7 +226,7 @@ public class TranslationsService
     public async Task RemoveAsync(string id) =>
         await _translationsCollection.DeleteOneAsync(x => x.Id == id);
 
-    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(IEnumerable<LocalizedText> localizedTextEntries, SearchTextContext searchContext)
+    private static IEnumerable<LocalizedText> MatchLocalizedTextEntries(IEnumerable<LocalizedText> localizedTextEntries, SearchContextTypes.SearchTextContext searchContext)
     {
         var isMatch = RegexTools.IsMatch;
 

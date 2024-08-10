@@ -35,7 +35,7 @@ public class TranslationsController : ControllerBase
         string? gameName = HttpContext.Request.Query["gameName"];
         string? text = HttpContext.Request.Query["text"];
 
-        SearchTextContext textContext = new(gameFranchise, gameName, text);
+        SearchContextTypes.SearchTextContext textContext = new(gameFranchise, gameName, text);
 
         IEnumerable<LocalizedText>? localizedTextEntries = await _translationsService.GetAsync(textContext);
 
@@ -50,16 +50,16 @@ public class TranslationsController : ControllerBase
     /// <param name="file"></param>
     /// <returns></returns>
     [HttpPost("search")]
-    public async Task<ActionResult<IEnumerable<LocalizedText.FileAndContent>>> Search([FromForm] IFormFile file)
+    public async Task<ActionResult<IEnumerable<LocalizedTextTypes.FileAndContent>>> Search([FromForm] IFormFile file)
     {
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
         IEnumerable<LocalizedText> localizedTextCollection = await _translationsService.GetAsync();
 
-        SearchFileContext fileContext = new(gameFranchise, gameName, file);
+        SearchContextTypes.SearchFileContext fileContext = new(gameFranchise, gameName, file);
 
         var results = await _translationsService.ProcessFileAsync(fileContext, localizedTextCollection); 
-        
+
         if(results is null) { return NotFound(); }
 
         var jsonResults = _translationsService.GenerateJSONDocumentsAsync(results, localizedTextCollection);
@@ -73,7 +73,7 @@ public class TranslationsController : ControllerBase
     /// <param name="results">Results that came from POST /search</param>
     /// <returns>Zip file that contains json files.</returns>
     [HttpPost("generate")]
-    public async Task<IActionResult> Generate(IEnumerable<LocalizedText.FileAndContent> results)
+    public async Task<IActionResult> Generate(IEnumerable<LocalizedTextTypes.FileAndContent> results)
     {
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
@@ -94,7 +94,7 @@ public class TranslationsController : ControllerBase
     }
 
     [HttpPost("upload")]
-    public async Task<IActionResult> Upload([FromForm] LocalizedText.FormData formData)
+    public async Task<IActionResult> Upload([FromForm] LocalizedTextTypes.FormData formData)
     {
         var files = formData.Files;
 
