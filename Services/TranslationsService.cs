@@ -89,7 +89,7 @@ public class TranslationsService
     }
 
     // TODO: localizedTextResults SHOULD be LocalizedText.Results (contains both found and not found erntries)...
-    public IEnumerable<LocalizedText.FileAndContent> GenerateJSONDocumentsAsync(IEnumerable<LocalizedText> localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
+    public IEnumerable<LocalizedText.FileAndContent> GenerateJSONDocumentsAsync(LocalizedText.Results localizedTextResults, IEnumerable<LocalizedText> localizedTextCollection)
     {
         // Get all texts FOR EACH languages.
         var languages = Enum.GetValues(typeof(Language.Codes)).Cast<Language.Codes>();
@@ -99,52 +99,71 @@ public class TranslationsService
             Language.Codes.en_US];
 
         var jsonFiles = new List<LocalizedText.FileAndContent>();
-        foreach(var language in languages)
+
+        if(localizedTextResults.NotFoundTextEntries.Count > 0)
         {
-            if(skipLanguages.Contains(language)) { continue; }
-
-            var foundTextDict = new Dictionary<string, string>();
-            var notFoundTextDict = new Dictionary<string, string>();
-            var languageString = language.ToString();
-            var filename = Path.ChangeExtension(languageString, ".json");
-            var notFoundFilename = Path.ChangeExtension(languageString + "_not_found", ".json");
-
-            foreach(var localizedTextResult in localizedTextResults)
+            var notInDatabaseName = "NotInDatabase.json";
+            var notInDatabaseDict = new Dictionary<string, string>();
+        
+            foreach(var textEntry in localizedTextResults.NotFoundTextEntries)
             {
-                if(localizedTextResult.Text is null) { continue; }
+                if(textEntry.Text is null){ continue; }
 
-                var localizedTextEntry = localizedTextCollection.Where(doc => 
-                    doc.Key == localizedTextResult.Key && 
-                    doc.Language == language).FirstOrDefault();
-                var key = localizedTextResult.Key;
+                notInDatabaseDict.Add(textEntry.Key, textEntry.Text);
+            }
 
-                if(localizedTextEntry is null) 
-                { 
-                    if(!notFoundTextDict.ContainsKey(key))
-                    {
-                        notFoundTextDict.Add(key, localizedTextResult.Text);
-                    }
-                    continue; 
-                }
+            jsonFiles.Add(new(notInDatabaseName, notInDatabaseDict));
+        }
+        
+        if(localizedTextResults.FoundTextEntries.Count > 0)
+        {
+            foreach(var language in languages)
+            {
+                if(skipLanguages.Contains(language)) { continue; }
 
-                localizedTextEntry.Text ??= "";
+                var foundTextDict = new Dictionary<string, string>();
+                var notFoundTextDict = new Dictionary<string, string>();
+                var languageString = language.ToString();
+                var filename = Path.ChangeExtension(languageString, ".json");
+                var notFoundFilename = Path.ChangeExtension(languageString + "_not_found", ".json");
 
-                if(!foundTextDict.ContainsKey(key))
+                foreach(var localizedTextResult in localizedTextResults.FoundTextEntries)
                 {
-                    foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+                    if(localizedTextResult.Text is null) { continue; }
+
+                    var localizedTextEntry = localizedTextCollection.Where(doc => 
+                        doc.Key == localizedTextResult.Key && 
+                        doc.Language == language).FirstOrDefault();
+                    var key = localizedTextResult.Key;
+
+                    if(localizedTextEntry is null) 
+                    { 
+                        if(!notFoundTextDict.ContainsKey(key))
+                        {
+                            notFoundTextDict.Add(key, localizedTextResult.Text);
+                        }
+                        continue; 
+                    }
+
+                    localizedTextEntry.Text ??= "";
+
+                    if(!foundTextDict.ContainsKey(key))
+                    {
+                        foundTextDict.Add(localizedTextEntry.Key, localizedTextEntry.Text);
+                    }
                 }
+
+                var jsonString = notFoundTextDict;
+                if(notFoundTextDict.Count > 0)
+                {
+                    jsonFiles.Add(new(notFoundFilename, jsonString));
+                }
+
+                if(foundTextDict.Count == 0) { continue; }
+
+                jsonString = foundTextDict;
+                jsonFiles.Add(new(filename, jsonString));
             }
-
-            var jsonString = notFoundTextDict;
-            if(notFoundTextDict.Count > 0)
-            {
-                jsonFiles.Add(new(notFoundFilename, jsonString));
-            }
-
-            if(foundTextDict.Count == 0) { continue; }
-
-            jsonString = foundTextDict;
-            jsonFiles.Add(new(filename, jsonString));
         }
 
         return jsonFiles;

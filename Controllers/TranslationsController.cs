@@ -61,8 +61,8 @@ public class TranslationsController : ControllerBase
         var results = await _translationsService.ProcessFileAsync(fileContext, localizedTextCollection); 
         
         if(results is null) { return NotFound(); }
-        
-        var jsonResults = _translationsService.GenerateJSONDocumentsAsync(results.FoundTextEntries, localizedTextCollection);
+
+        var jsonResults = _translationsService.GenerateJSONDocumentsAsync(results, localizedTextCollection);
         
         return Ok(jsonResults);
     }
