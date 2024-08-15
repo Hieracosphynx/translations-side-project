@@ -37,7 +37,7 @@ public class TranslationsService
     public async Task<IEnumerable<LocalizedText>> GetAsync(SearchContextTypes.SearchTextContext textContext)
     {
         var localizedTexts = await _translationsCollection.Find(FilterDefinition<LocalizedText>.Empty).ToListAsync();
-
+        
         return MatchLocalizedTextEntries(localizedTexts, textContext);
     }
 
@@ -242,7 +242,7 @@ public class TranslationsService
         var isMatch = RegexTools.IsMatch;
 
         return localizedTextEntries.Where(doc =>
-            isMatch(doc.Text, searchContext.Text, [RegexPatterns.SpecialCharExceptBraces, RegexPatterns.ComplexStringPattern]) &&
+            (string.IsNullOrEmpty(searchContext.Text) || isMatch(doc.Text, searchContext.Text, [RegexPatterns.SpecialCharExceptBraces, RegexPatterns.ComplexStringPattern])) &&
             (string.IsNullOrEmpty(searchContext.GameFranchise) || 
                 isMatch(doc.GameFranchise, searchContext.GameFranchise, [RegexPatterns.SpecialCharactersPattern])) && 
             (string.IsNullOrEmpty(searchContext.GameName) || 
