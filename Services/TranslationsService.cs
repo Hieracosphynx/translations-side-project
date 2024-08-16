@@ -198,10 +198,11 @@ public class TranslationsService
         return memoryStream.ToArray();
     }
 
-    public async Task UploadAsync(LocalizedTextTypes.FormData formData)
+    public async Task UploadAsync(UploadContextTypes.UploadFilesContext uploadContextTypes)
     {
-        var files = formData.Files;
+        var (gameFranchise, gameName, files) = uploadContextTypes;
         var skipStrings = new string[]{"", "{", "}"};
+        Console.WriteLine("{0}=>{1}=>{2}", gameFranchise, gameName, files.Length);
         for(var index = 0; index < files.Length; index++)
         {
             var file = files[index];
@@ -219,8 +220,8 @@ public class TranslationsService
                     Key = parsedTextEntry.Key,
                     Text = parsedTextEntry.Value,
                     Language = Language.GetLanguageCodeEnum(filename),
-                    GameFranchise = formData.GameFranchise ?? "",
-                    GameName = formData.GameName ?? "",
+                    GameFranchise = gameFranchise ?? "",
+                    GameName = gameName ?? "",
                 };
 
                 await CreateAsync(localizedTextEntry);

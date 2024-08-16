@@ -94,13 +94,16 @@ public class TranslationsController : ControllerBase
     }
 
     [HttpPost("upload")]
-    public async Task<IActionResult> Upload([FromForm] LocalizedTextTypes.FormData formData)
+    public async Task<IActionResult> Upload([FromForm] IFormFile[] fileEntries)
     {
-        var files = formData.Files;
+        string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
+        string? gameName = HttpContext.Request.Query["gameName"];
 
-        if(files == null || files.Length == 0) { return BadRequest("No file uploaded"); }
+        UploadContextTypes.UploadFilesContext uploadFileContext = new(gameFranchise, gameName, fileEntries);
 
-        await _translationsService.UploadAsync(formData);
+        if(fileEntries == null || fileEntries.Length == 0) { return BadRequest("No file uploaded"); }
+
+        await _translationsService.UploadAsync(uploadFileContext);
 
         return Ok(new { message = "Successfully uploaded" });
     }
