@@ -96,12 +96,12 @@ public class TranslationsController : ControllerBase
     [HttpPost("upload")]
     public async Task<IActionResult> Upload([FromForm] IFormFile[] fileEntries)
     {
+        if(fileEntries == null || fileEntries.Length == 0) { return BadRequest("No file uploaded"); }
+
         string? gameFranchise = HttpContext.Request.Query["gameFranchise"];
         string? gameName = HttpContext.Request.Query["gameName"];
 
         UploadContextTypes.UploadFilesContext uploadFileContext = new(gameFranchise, gameName, fileEntries);
-
-        if(fileEntries == null || fileEntries.Length == 0) { return BadRequest("No file uploaded"); }
 
         await _translationsService.UploadAsync(uploadFileContext);
 
