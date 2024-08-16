@@ -108,7 +108,6 @@ public class TranslationsController : ControllerBase
         return Ok(new { message = "Successfully uploaded" });
     }
 
-
     [HttpPut("{id:length(24)}")]
     public async Task<IActionResult> Update(string id, LocalizedText updatedLocalizedText)
     {
